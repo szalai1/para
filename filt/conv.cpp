@@ -23,5 +23,6 @@ char M[3][3]= {				// konvolucios matrix
 
 int main(int argc, char *argv[]) {
 	Image img(argv[1]);
+  img.save("proba.pgm");
 }
 
