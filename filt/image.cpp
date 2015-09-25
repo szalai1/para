@@ -1,6 +1,10 @@
 #include "image.h"
 #include <iostream>
 
+Image::~Image() {
+  delete[] img_;
+}
+
 Image::Image(char *file) {
   std::ifstream ifs(file, std::fstream::in|std::fstream::binary);
   ifs.ignore(256, '\n');

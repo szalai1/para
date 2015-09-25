@@ -1,24 +1,17 @@
-/*
-
- * beolvassa a parameterkent kapott DIMX * DIMX mereru bitmap file-t, amelyen 
- * elkiemelest vegez, es kiirja a pic.out file-ba az eredmenyt.
- * DIMX, DIMY, valamint az eredmeny file neve be van drotozva a programba!
- *
- * TODO: pgm formatum ertelmezses/eloallitasa
- * 	pgm header: "P5\nW\nH\n255\n"
- *      ahol W - szelesseg
- * 	     H - magassag
- * 
- */
-
 #include <iostream>
+#include <mpi.h>
 #include "image.h"
 
-char M[]= {	0, 1, 0,  1,-4, 1,  0, 1 ,0  };
+char M[]= {	5, 2, 0,  1,-1, 2,  -1, 1 ,1  };
 
 
 
 int main(int argc, char *argv[]) {
+  MPI_Init(&argc, &argv);
+  int size , rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::cout << size << " " << rank << std::endl;
 	Image img(argv[1]);
   img.convolution(M);
   img.save("proba.pgm");
