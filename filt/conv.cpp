@@ -14,15 +14,13 @@
 #include <iostream>
 #include "image.h"
 
-char M[3][3]= {				// konvolucios matrix
-	{ 0, 1, 0, },
-	{ 1,-4, 1, },
-	{ 0, 1 ,0  } };
+char M[]= {	0, 1, 0,  1,-4, 1,  0, 1 ,0  };
 
 
 
 int main(int argc, char *argv[]) {
 	Image img(argv[1]);
+  img.convolution(M);
   img.save("proba.pgm");
 }
 
