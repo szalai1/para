@@ -20,14 +20,14 @@ Image::Image(char *file) {
 
 char Image::get(int i, int j) {
   if (i < dimx_ and j < dimy_) {
-    return img_[i*dimy_ + j];
+    return img_[i*dimx_ + j];
   }
   return 0;
 }
 
 void Image::set(int i, int j, char pix) {
   if ( i < dimx_ and j < dimy_) {
-    img_[i*dimy_ + j] = pix;
+    img_[j*dimx_ + i] = pix;
   }
 }
 
@@ -75,10 +75,10 @@ void Image::convolute_lineX(int line, char *M) {
   if ( line < dimx_ and line > 0) {
     char *tmp = new char[dimy_];
     for (int ii = 1; ii < dimy_; ++ii) {
-      tmp[ii] = convolute_pixel(ii, line, M);
+      tmp[ii] = convolute_pixel(line, ii, M);
     }
     for ( int ii = 1; ii < dimy_; ++ii) {
-      set(ii, line, tmp[ii]);
+      set(line, ii, tmp[ii]);
     }
     delete[] tmp;
   }
@@ -89,7 +89,7 @@ char Image::convolute_pixel(int x, int y, char *M) {
     char c = 0;
     for (int k=0; k<3; k++) {
       for (int l=0; l<3; l++) {
-        c += M[k*3 + l]*img_[(x-k+1)*dimy_ + y-l+1];
+        c += M[k*3 + l]*img_[(y-k+1)*dimx_ + x-l+1];
       }
     }
     return c;

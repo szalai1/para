@@ -2,7 +2,7 @@
 //#include <mpi.h>
 #include "image.h"
 
-char M[]= {	5, 2, 0,  1,-1, 2,  -1, 1 ,1  };
+char M[]= {	0, 1, 0,  1, -4, 1,  0, 1, 0};
 
 
 
