@@ -40,6 +40,9 @@ void Image::save(const char *file_name) {
 }
 
 void Image::convolution(char *M) {
+  #ifdef OMPI_MPI_H
+  void Image::mpi_conv(char *M);
+  #else
   char *new_pic = new char[dimx_*dimy_];
   for ( int i = 1; i < dimx_-1; ++i) {
     for (int j = 1; j < dimy_ -1; ++j) {
@@ -48,10 +51,11 @@ void Image::convolution(char *M) {
   }
   delete[] img_;
   img_=new_pic;
+  #endif
 }
 
 Image Image::get_stripex(int from, int to) const {
-  if ( from > 0 and to < dimx_) {
+  if ( from >= 0 and to < dimx_) {
     int len = to - from;
     char *new_img = new char[len * dimy_];
     char *act = new_img;
@@ -64,23 +68,21 @@ Image Image::get_stripex(int from, int to) const {
 }
 
 Image Image::get_stripey(int from, int to) const {
-  if ( from > 0 and to < dimy_) {
+  if ( from >= 0 and to < dimy_) {
     int len = to - from;
     char *new_img  = new char[len * dimx_];
-    memcpy(new_img, img_ + from, len);
+    memcpy(new_img, img_ + from*dimx_, len*dimx_);
+    return Image(new_img, dimx_, len );
   }
 }
 
-void Image::convolute_lineX(int line, char *M) {
+char *Image::convolute_lineX(int line, char *M) {
   if ( line < dimx_ and line > 0) {
     char *tmp = new char[dimy_];
     for (int ii = 1; ii < dimy_; ++ii) {
       tmp[ii] = convolute_pixel(line, ii, M);
     }
-    for ( int ii = 1; ii < dimy_; ++ii) {
-      set(line, ii, tmp[ii]);
-    }
-    delete[] tmp;
+    return tmp;
   }
 }
 
@@ -96,3 +98,32 @@ char Image::convolute_pixel(int x, int y, char *M) {
   }
   return 0;
 }
+
+Image Image::catenateX(std::vector<Image*> imgs, int num) {
+  int new_dimx = dimx_;
+  for(int ii = 0; ii < num; ++ii) {
+    new_dimx += imgs[ii]->get_sizex();
+    if (dimy_ < imgs[ii]->get_sizey()) {
+      return Image(NULL, 0 ,0);
+    }
+  }
+  char *new_img = new char[new_dimx*dimy_];
+  char *act = new_img;
+  for(int ii = 0; ii < dimy_; ++ii) {
+    memcpy(act, img_ + ii*dimx_, dimx_);
+    act += dimx_;
+    for(int jj = 0; jj < num; ++jj) {
+      char *act_img = imgs[jj]->img_;
+      int dimx = imgs[jj]->dimx_;
+      memcpy(act, act_img + ii*dimx, dimx);
+      act += dimx;
+    }
+  }
+  return Image(new_img, new_dimx, dimy_);
+}
+
+#ifdef OMPI_MPI_H
+void Image::mpi_conv(char *) {
+
+}
+#endif

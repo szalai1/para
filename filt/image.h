@@ -1,10 +1,12 @@
 #include <fstream>
 #include <cstring>
+#include <vector>
 
 class Image {
  public:
   Image(char *file_name);
   Image(char *img, int dimx, int dimy): img_(img), dimx_(dimx), dimy_(dimy) {}
+  ~Image();
   int get_sizex() const {return dimx_;}
   int get_sizey() const {return dimy_;}
   Image get_stripex(int from, int to) const;
@@ -13,11 +15,15 @@ class Image {
   void set(int i, int j, char pix);
   void save(const char *file_name);
   void convolution(char *M);
-  Image catenate(Image);
-  void convolute_lineX(int, char *);
+  char *convolute_lineX(int, char *);
   char convolute_pixel(int, int, char *);
-  ~Image();
+  Image catenateX(std::vector<Image*>, int);
+  Image catenateY(std::vector<Image*>);
  protected:
   int dimx_, dimy_;
   char *img_;
+ private:
+  #ifdef OMPI_MPI_H
+  void mpi_conv(char *);
+  #endif
 };
