@@ -20,14 +20,14 @@ Image::Image(char *file) {
 
 char Image::get(int i, int j) {
   if (i < dimx_ and j < dimy_) {
-    return img_[i*dimx_ + j];
+    return img_[i*dimy_ + j];
   }
   return 0;
 }
 
 void Image::set(int i, int j, char pix) {
   if ( i < dimx_ and j < dimy_) {
-    img_[i*dimx_ + j] = pix;
+    img_[i*dimy_ + j] = pix;
   }
 }
 
@@ -43,14 +43,56 @@ void Image::convolution(char *M) {
   char *new_pic = new char[dimx_*dimy_];
   for ( int i = 1; i < dimx_-1; ++i) {
     for (int j = 1; j < dimy_ -1; ++j) {
-      for (int k=0; k<3; k++) {
-	      for (int l=0; l<3; l++) {
-          new_pic[i*dimy_ + j] += M[k*3 + l]*img_[(i-k+1)*dimy_ + j-l+1];
-        }
-      }   
+      new_pic[i*dimy_ + j] += convolute_pixel(i, j, M);
     }
   }
   delete[] img_;
   img_=new_pic;
 }
 
+Image Image::get_stripex(int from, int to) const {
+  if ( from > 0 and to < dimx_) {
+    int len = to - from;
+    char *new_img = new char[len * dimy_];
+    char *act = new_img;
+    for(int ii = 0; ii < dimy_; ++ii) {
+      memcpy(act, img_ + ii*dimx_ + from, len);
+      act += len;
+    }
+    return Image(new_img, len, dimy_);
+  }
+}
+
+Image Image::get_stripey(int from, int to) const {
+  if ( from > 0 and to < dimy_) {
+    int len = to - from;
+    char *new_img  = new char[len * dimx_];
+    memcpy(new_img, img_ + from, len);
+  }
+}
+
+void Image::convolute_lineX(int line, char *M) {
+  if ( line < dimx_ and line > 0) {
+    char *tmp = new char[dimy_];
+    for (int ii = 1; ii < dimy_; ++ii) {
+      tmp[ii] = convolute_pixel(ii, line, M);
+    }
+    for ( int ii = 1; ii < dimy_; ++ii) {
+      set(ii, line, tmp[ii]);
+    }
+    delete[] tmp;
+  }
+}
+
+char Image::convolute_pixel(int x, int y, char *M) {
+  if (x > 0 and x < dimx_ and y > 0 and y < dimy_) {
+    char c = 0;
+    for (int k=0; k<3; k++) {
+      for (int l=0; l<3; l++) {
+        c += M[k*3 + l]*img_[(x-k+1)*dimy_ + y-l+1];
+      }
+    }
+    return c;
+  }
+  return 0;
+}
