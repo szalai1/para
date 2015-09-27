@@ -124,6 +124,24 @@ Image Image::catenateX(std::vector<Image*> imgs, int num) {
 
 #ifdef OMPI_MPI_H
 void Image::mpi_conv(char *) {
-
+  int size, rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int rate = ((dimy_/size) + 1);
+  int from = rank * rate;
+  int to = (rank + 1)*rate -1;
+  if (rank == size -1) {
+    to = dimy_;
+  }
+  int len = to - from;
+  char *new_pic = new char[len*dimy_];
+  for ( int i =  1; i < dimx_-1; ++i) {
+    for (int j = from + 1; j < to -1; ++j) {
+      new_pic[i*len + j] += convolute_pixel(i, j, M);
+    }
+  }
+  delete img_;
+  img_=new_pic;
+  
 }
 #endif
