@@ -1,8 +1,8 @@
-CC=g++
+CC=mpic++
 FLAGS=-g
 BINARY=main
 OBJECTS=conv.o image.o
-HEADERS=
+HEADERS=image.h
 
 $(BINARY): $(OBJECTS)
 	$(CC) -g $^ -o $@

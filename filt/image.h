@@ -1,6 +1,7 @@
 #include <fstream>
 #include <cstring>
 #include <vector>
+#include <mpi.h>
 
 class Image {
  public:
@@ -19,11 +20,10 @@ class Image {
   char convolute_pixel(int, int, char *);
   Image catenateX(std::vector<Image*>, int);
   Image catenateY(std::vector<Image*>);
+  void mpi_conv(char *);
  protected:
   int dimx_, dimy_;
   char *img_;
  private:
-  #ifdef OMPI_MPI_H
-  void mpi_conv(char *);
-  #endif
+
 };

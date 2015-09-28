@@ -40,9 +40,6 @@ void Image::save(const char *file_name) {
 }
 
 void Image::convolution(char *M) {
-  #ifdef OMPI_MPI_H
-  void Image::mpi_conv(char *M);
-  #else
   char *new_pic = new char[dimx_*dimy_];
   for ( int i = 1; i < dimx_-1; ++i) {
     for (int j = 1; j < dimy_ -1; ++j) {
@@ -51,7 +48,6 @@ void Image::convolution(char *M) {
   }
   delete[] img_;
   img_=new_pic;
-  #endif
 }
 
 Image Image::get_stripex(int from, int to) const {
@@ -122,26 +118,48 @@ Image Image::catenateX(std::vector<Image*> imgs, int num) {
   return Image(new_img, new_dimx, dimy_);
 }
 
-#ifdef OMPI_MPI_H
-void Image::mpi_conv(char *) {
+void Image::mpi_conv(char *M) {
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  int rate = ((dimy_/size) + 1);
-  int from = rank * rate;
-  int to = (rank + 1)*rate -1;
+  MPI_Bcast(&dimy_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&dimx_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  std::cout << size << " " << rank << " " << dimx_ << " " << dimy_ << std::endl;
+  int rate = ((dimy_/size));
+  int from = rank * rate ;
+  int to = (rank + 1)*rate -1 ;
   if (rank == size -1) {
     to = dimy_;
   }
-  int len = to - from;
-  char *new_pic = new char[len*dimy_];
-  for ( int i =  1; i < dimx_-1; ++i) {
-    for (int j = from + 1; j < to -1; ++j) {
-      new_pic[i*len + j] += convolute_pixel(i, j, M);
-    }
+  std::cout << size << " " << rank << " " << from <<  " "<< to << std::endl; 
+  char *tmp_img = new char[(to-from)*dimx_];
+  MPI_Scatter(img_,
+              (to-from)*dimx_,
+              MPI_CHAR,
+              tmp_img,
+              (to-from)*dimx_,
+              MPI_CHAR,
+              0, MPI_COMM_WORLD);
+  Image tmp(tmp_img, to-from, dimy_);
+  tmp.convolution(M);
+  char *new_pic = NULL;
+  if (rank == 0) {
+    new_pic = new char[dimx_*dimy_];
   }
-  delete img_;
-  img_=new_pic;
-  
+  MPI_Gather(tmp.img_, (to-from)*dimx_,MPI_CHAR,
+             new_pic, dimx_*dimy_, MPI_CHAR, 0,
+             MPI_COMM_WORLD);
+  delete[] tmp_img;
+  if (rank == 0) {
+    Image new_image(new_pic, dimx_, dimy_);
+    for (int ii = 0; ii < size -1; ++ii) {
+      for (int jj = 0; jj < dimx_; ++jj) {
+        int x = ((dimy_/size) + 1)*ii;
+        new_image.set(x, jj, convolute_pixel(x, jj, M) );
+      }
+    }
+    img_ = new_image.img_;
+    new_image.img_ = NULL;
+  }
 }
-#endif
+
