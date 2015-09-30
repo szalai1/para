@@ -122,16 +122,17 @@ void Image::mpi_conv(char *M) {
   int size, rank;
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  std::cout << "###" << rank << " x: " << dimx_ << " y: " << dimy_ << std::endl;
   MPI_Bcast(&dimy_, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&dimx_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  std::cout << size << " " << rank << " " << dimx_ << " " << dimy_ << std::endl;
+  std::cout << size << " " << rank << " x: " << dimx_ << " y: " << dimy_ << std::endl;
   int rate = ((dimy_/size));
   int from = rank * rate ;
   int to = (rank + 1)*rate -1 ;
   if (rank == size -1) {
     to = dimy_;
   }
-  std::cout << size << " " << rank << " " << from <<  " "<< to << std::endl; 
+  std::cout << size << " " << rank << " f: " << from <<  " to: " << to << std::endl;
   char *tmp_img = new char[(to-from)*dimx_];
   MPI_Scatter(img_,
               (to-from)*dimx_,
@@ -140,26 +141,33 @@ void Image::mpi_conv(char *M) {
               (to-from)*dimx_,
               MPI_CHAR,
               0, MPI_COMM_WORLD);
-  Image tmp(tmp_img, to-from, dimy_);
+  std::cout << rank << ": scatter done"  << std::endl;
+  Image tmp(tmp_img, dimx_, to-from);
+  char file_name[] = "pic_x.pgm";
+  file_name[4] = '0' + rank;
   tmp.convolution(M);
+  std::cout << rank << ": conv done \n";
   char *new_pic = NULL;
   if (rank == 0) {
     new_pic = new char[dimx_*dimy_];
   }
-  MPI_Gather(tmp.img_, (to-from)*dimx_,MPI_CHAR,
-             new_pic, dimx_*dimy_, MPI_CHAR, 0,
+  MPI_Gather(tmp_img, 150*dimx_, //(to-from)*dimx_,
+             MPI_CHAR,
+             new_pic, (to-from)*dimx_,
+             MPI_CHAR, 0,
              MPI_COMM_WORLD);
-  delete[] tmp_img;
+  std::cout << rank  << ": gather\n";
   if (rank == 0) {
     Image new_image(new_pic, dimx_, dimy_);
+    new_image.save("yyy.pgm");
     for (int ii = 0; ii < size -1; ++ii) {
       for (int jj = 0; jj < dimx_; ++jj) {
         int x = ((dimy_/size) + 1)*ii;
         new_image.set(x, jj, convolute_pixel(x, jj, M) );
       }
     }
-    img_ = new_image.img_;
+    img_ = new_pic;;
     new_image.img_ = NULL;
-  }
+    }
 }
 
