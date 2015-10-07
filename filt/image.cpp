@@ -1,5 +1,7 @@
 #include "image.h"
 #include <iostream>
+#include <mpi.h>
+#include <ctime>
 
 Image::~Image() {
   delete[] img_;
@@ -124,42 +126,38 @@ void Image::mpi_conv(char *M) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Bcast(&dimy_, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&dimx_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  std::cout << size << " " << rank << " " << dimx_ << " " << dimy_ << std::endl;
-  int rate = ((dimy_/size));
-  int from = rank * rate ;
-  int to = (rank + 1)*rate -1 ;
-  if (rank == size -1) {
-    to = dimy_;
-  }
-  std::cout << size << " " << rank << " " << from <<  " "<< to << std::endl; 
-  char *tmp_img = new char[(to-from)*dimx_];
-  MPI_Scatter(img_,
-              (to-from)*dimx_,
-              MPI_CHAR,
-              tmp_img,
-              (to-from)*dimx_,
-              MPI_CHAR,
-              0, MPI_COMM_WORLD);
-  Image tmp(tmp_img, to-from, dimy_);
-  tmp.convolution(M);
-  char *new_pic = NULL;
-  if (rank == 0) {
-    new_pic = new char[dimx_*dimy_];
-  }
-  MPI_Gather(tmp.img_, (to-from)*dimx_,MPI_CHAR,
-             new_pic, dimx_*dimy_, MPI_CHAR, 0,
-             MPI_COMM_WORLD);
-  delete[] tmp_img;
-  if (rank == 0) {
-    Image new_image(new_pic, dimx_, dimy_);
-    for (int ii = 0; ii < size -1; ++ii) {
-      for (int jj = 0; jj < dimx_; ++jj) {
-        int x = ((dimy_/size) + 1)*ii;
-        new_image.set(x, jj, convolute_pixel(x, jj, M) );
-      }
+  MPI_Status stat;
+  char *tmp_pic = NULL;
+  int size_x;
+  for ( int ii = 1; ii < size; ++ii) {
+    int rate = dimy_/size;
+    int from = (ii -1)*rate;
+    int to = ii*rate;
+    if ( ii == size -1 ) {
+      to = dimy_;
     }
-    img_ = new_image.img_;
-    new_image.img_ = NULL;
+    if ( rank == 0 ) {
+      std::cout << rank <<  " " << ii << " x: " 
+        << from << " " << to << std::endl;
+      MPI_Send(img_ + from*dimx_ , (to - from)*dimx_,
+          MPI_CHAR, ii, 1, MPI_COMM_WORLD);
+      std::cout << rank << "send to " << ii  << std::endl;
+    }
+    else if (rank == ii ) {
+      size_x = (to - from)*dimx_;
+    }
   }
+  if (rank != 0 ) {
+    std::cout << rank << std::endl;
+    tmp_pic = new char[size_x];
+    MPI_Recv(tmp_pic, size_x, MPI_CHAR, 0, 1,
+        MPI_COMM_WORLD, &stat);
+    std::cout << rank << "reciev from  " <<  std::endl;
+    char name[] = "pic_n.pic";
+    name[4] = '0' + rank;
+    Image img_tmp(tmp_pic, dimx_, size_x);
+    img_tmp.save(name);
+  }
+  std::cout << "vege " << rank << std::endl;
 }
 

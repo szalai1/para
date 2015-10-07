@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include "image.h"
+#include  <mpi.h>
+
 
 char M[]= {	0, 1, 0,  1, -4, 1,  0, 1, 0};
 
@@ -15,5 +17,6 @@ int main(int argc, char *argv[]) {
   }
   img.mpi_conv(M);
   img.save("mpi_conv.pgm");
+  MPI_Finalize();
 }
 
