@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   for( int i = 0; i < 12; ++i) {
     a[i]='.';
   }
-  MPI_Gather(b+rank*3, 3, MPI_CHAR, a, 3, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Gather(b+rank*3, 3, MPI_CHAR, a, 6, MPI_CHAR, 0, MPI_COMM_WORLD);
     std::cout << "    n:" << rank  << " a = #" << a  << "#"<< std::endl;
   MPI_Finalize();
 }
