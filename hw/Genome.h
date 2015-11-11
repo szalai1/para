@@ -8,6 +8,7 @@ class Genome {
   int size() const {
     return length_;
   }
+  char *serialize() const;
   Genome append(Genome&);
   char const *get_data();
   void mutation();

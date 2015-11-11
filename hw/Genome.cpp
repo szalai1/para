@@ -52,3 +52,51 @@ Genome& append(const Genome &g) {
   genome_ = tmp;
   return *this;
 }
+
+
+char *serialize() const {
+  char *ser = new char[sizeof(float) + sizeof(size_t) + length_];
+  memcpy(ser, &length_, sizeof(size_t));
+  memcpy(ser + sizeof(size_t), &mutation_rate_, sizeof(float));
+  memcpy(ser + sizeof(size_t) + sizeof(float), &genome_, length_);
+}
+
+void mutation() {
+  for ( int ii = 0; ii < length_ -1; ++ii ) {
+    if (std::dynamic_cast<double>(rand())/RAND_MAX < mutation_rate_) {
+      std::swap<char>(genome_[ii], genome_[ii + 1]);
+    }
+  }
+}
+
+void dot_mutation(size_t where) {
+  if ( where < length_ ) {
+    genome_[where] = rand()%255;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
