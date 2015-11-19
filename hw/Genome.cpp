@@ -75,6 +75,9 @@ void dot_mutation(size_t where) {
   }
 }
 
+double evaluate(std::function<double(char*,size_t)> f) {
+  return f(genome_, length_);
+}
 
 
 

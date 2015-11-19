@@ -1,8 +1,11 @@
+#include<functional>
+
 class Genome {
  public:
   Genome() = delete;
   Genome(size_t, float );
   Genome(Genome&&);
+  double evaluate(std::function<double(char*,size_t)>) const;
   Genome get_begin(size_t) const;
   Genome get_end(szie_t) const;
   int size() const {
