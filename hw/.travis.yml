@@ -1,0 +1,5 @@
+language: cpp
+
+install: bash manage/install.sh
+
+script: bash manage/test.sh
