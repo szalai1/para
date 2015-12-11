@@ -1,6 +1,6 @@
 #include "Genome.h"
 
-using namesapce Genome;
+using Genome;
 
 Genome(Genome&& g) {
   length_ = g.length_;
@@ -10,13 +10,20 @@ Genome(Genome&& g) {
   mutation_rate_ = g.mutation_rate_;
 }
 
-Genome(size_t len, float mutation_rate)  :length_(len),
-                                          mutation_rate_(mutation_rate)
+Genome(size_t len, float mutation_rate)  :length_{len},
+  mutation_rate_{mutation_rate}
 {
   genome_ = new char[length_];
   for ( int ii = 0; ii < length_; ++ii) {
-    genome_[ii] = (random % 255);
+    genome_[ii] = random % 255;
   }
+}
+
+Genome(Genome &&other) 
+  : length_{other.length_}, 
+  mutation_rate_{other.mutation_rate_},
+  genome_{other.genome} {
+    other.geneme_ = nullptr; 
 }
 
 Genome get_begin(size_t k) const {
@@ -42,23 +49,30 @@ Genome get_end(size_t k) const {
   return begin_genome;
 }
 
-Genome& append(const Genome &g) {
+
   size_t len = length_ + g.length_;
   char *tmp = new char[len];
-  strcpy(tmp, genome_);
-  strcpy(tmp + length_, g.genome_);
+  memcpy(tmp, genome_, length_);
+  memcpy(tmp + length_, g.genome_, g.length_);
   delete[] genome_;
   length_ = len;
   genome_ = tmp;
   return *this;
 }
 
-
 char *serialize() const {
   char *ser = new char[sizeof(float) + sizeof(size_t) + length_];
   memcpy(ser, &length_, sizeof(size_t));
   memcpy(ser + sizeof(size_t), &mutation_rate_, sizeof(float));
   memcpy(ser + sizeof(size_t) + sizeof(float), &genome_, length_);
+  return ser;
+}
+
+void deserialize(const char* ser) {
+  memcpy(ser, lenght_, sizeof(size_t));
+  memcpy(ser + sizeof(size_t), mutation_rate_, sizeof(float));
+  genome_ = new char[length_];
+  memcpy(ser + sizeof(size_t) + sizeof(float), genome_, length_);
 }
 
 void mutation() {
@@ -75,28 +89,20 @@ void dot_mutation(size_t where) {
   }
 }
 
+Genome & operator=(Genome &rhs){
+  delete[] genome_;
+  geneom_ = new char[rhs.length_];
+  memcpy(genome_, rhs.genome_, length_);
+  length_ = rhs.length_;
+  mutation_rate_ = rhs.mutation_rate_;  
+  return *this;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Genome & operator=(Genome &&rhs) {
+  delete[] genome_;
+  genome_ = rhs.genome_;
+  rhs.genome_ = nullptr;
+  length_ = rhs.length_;
+  mutation_rate_ = rhs.mutation_rate_;
+}
 
