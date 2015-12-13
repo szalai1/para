@@ -1,32 +1,33 @@
-#include <functional>
-#include <cstring>
+#ifndef GENOME_H
+#define GENOME_H
 
-class Genome {
+#include <cstring>
+#include <map>
+#include <cmath>
+#include <iostream>
+
+class Individual {
  public:
-  Genome() = delete;
-  Genome(size_t, float,
-         std::function<char(size_t)> f = [](size_t s)->char
-           {return rand() % 255; } );
-  Genome(const Genome &);
-  Genome(Genome&&);
-  double evaluate(std::function<double(char*,size_t)>) const;
-  Genome get_begin(size_t) const;
-  Genome get_end(size_t) const;
+  Individual(const char *);
+  Individual();
+  Individual(Individual const &ind);
+  Individual(Individual &&ind);
+  Individual &operator=(Individual const &ind);
+  Individual &operator=(Individual &&ind);
   int size() const {
     return length_;
   }
   char *serialize() const;
-  Genome& append(const Genome&);
-  char const *get_data();
   void mutation();
-  ~Genome() {
-    delete[] genome_;
-  }
-  Genome operator=(const Genome &);
-  Genome& operator=(Genome &&);
-  void dot_mutation(size_t);
+  double evaluate() const;
+  friend std::ostream& operator<<(std::ostream &os, Individual const &indiv);
+  ~Individual() { delete[] genome_;}
  private:
   size_t length_;
   char *genome_;
-  float mutation_rate_;
+  friend std::pair<Individual, Individual> crossover(Individual const &,
+                                                      Individual const &);
+  
 };
+
+#endif

@@ -1,102 +1,102 @@
 #include "Genome.h"
+#include <iomanip>
 
+std::pair<Individual, Individual> crossover(Individual const &,
+                                                      Individual const &);
 
-Genome::Genome(Genome&& g) {
-  length_ = g.length_;
-  g.length_ = 0;
-  genome_ = g.genome_;
-  g.genome_ = nullptr;
-  mutation_rate_ = g.mutation_rate_;
-}
-
-Genome::Genome(size_t len,
-               float mutation_rate,
-               std::function<char(size_t)> f)  :length_(len),
-                                          mutation_rate_(mutation_rate)
-{
+Individual::Individual() {
+  length_ = sizeof(double);
   genome_ = new char[length_];
-  for ( size_t ii = 0; ii < length_; ++ii) {
-    genome_[ii] = f(ii);
+  for (size_t ii = 0; ii < length_; ++ii) {
+    genome_[ii] = rand()%255;
   }
 }
 
-Genome Genome::get_begin(size_t k) const {
-  if (k >= length_ ) {
-    return Genome{0, mutation_rate_};
-  } 
-  Genome begin_genome{k, mutation_rate_};
-  for ( size_t ii = 0; ii < k; ++ii ) {
-    begin_genome.genome_[ii] = genome_[ii];
-  }
-  return begin_genome;
+Individual::Individual(Individual const &ind) {                    
+  length_ = ind.length_;
+  genome_ = new char[length_];
+  memcpy(genome_, ind.genome_, length_);
 }
 
-Genome Genome::get_end(size_t k) const {
-  if (k >= length_ ) {
-    return Genome{0, mutation_rate_};
-  }
-  Genome begin_genome{length_ - k, mutation_rate_};
-  for ( size_t ii = k; ii < length_; ++ii ) {
-    begin_genome.genome_[ii-k] = genome_[ii];
-  }
-  return begin_genome;
+Individual::Individual(Individual &&ind) {                    
+  length_ = ind.length_;
+  genome_ = ind.genome_;
+  ind.genome_ = nullptr;
 }
 
-Genome& Genome::append(const Genome &g) {
-  size_t len = length_ + g.length_;
-  char *tmp = new char[len];
-  strcpy(tmp, genome_);
-  strcpy(tmp + length_, g.genome_);
-  delete[] genome_;
-  length_ = len;
-  genome_ = tmp;
+Individual &Individual::operator=(Individual const &ind) {
+  Individual id{ind};
+  length_ = id.length_;
+  genome_ = id.genome_;
+  id.genome_ = nullptr;
+  return *this;
+}
+
+Individual &Individual::operator=(Individual &&ind) {
+  delete genome_;
+  genome_ = ind.genome_;
+  length_ = ind.length_;
+  ind.genome_ = nullptr;
   return *this;
 }
 
 
-char *Genome::serialize() const {
-  char *ser = new char[sizeof(float) + sizeof(size_t) + length_];
+Individual::Individual(const char *cc):Individual() {
+  memcpy(&length_, cc, sizeof(size_t));
+  memcpy(&genome_, cc + sizeof(size_t),length_);
+}
+
+char *Individual::serialize() const {
+  char *ser = new char[sizeof(size_t) + length_];
   memcpy(ser, &length_, sizeof(size_t));
-  memcpy(ser + sizeof(size_t), &mutation_rate_, sizeof(float));
-  memcpy(ser + sizeof(size_t) + sizeof(float), &genome_, length_);
+  memcpy(ser + sizeof(size_t), &genome_, length_);
   return ser;
 }
 
-void Genome::mutation() {
-  for ( size_t ii = 0; ii < length_ -1; ++ii ) {
-    if (static_cast<double>(rand())/RAND_MAX < mutation_rate_) {
-      std::swap<char>(genome_[ii], genome_[ii + 1]);
-    }
+void Individual::mutation() {
+  size_t n =  rand()%length_;
+  size_t where = rand() % 8;
+  bool bit = (genome_[n] >> where)%2;
+  if ( bit ) {
+    genome_[n] &= ~(1u << where);
+  }
+  else {
+    genome_[n] |= (1u << where);
   }
 }
 
-void Genome::dot_mutation(size_t where) {
-  if ( where < length_ ) {
-    genome_[where] = rand()%255;
-  }
+std::pair<Individual, Individual> crossover(Individual const &A,
+                                            Individual const &B) {
+  auto ret_val = std::make_pair(Individual{}, Individual{});
+  size_t where = rand() % A.length_;
+  memcpy(ret_val.first.genome_, &A.genome_ , where);
+  memcpy(ret_val.first.genome_ + where,
+         B.genome_ + where ,
+         A.length_ - where);
+  memcpy(ret_val.second.genome_, B.genome_ , where);
+  memcpy(ret_val.second.genome_ + where,
+         A.genome_ + where ,
+         A.length_ - where);
+  return ret_val;
 }
 
+double Individual::evaluate() const {
+  double x = 0;
+  memcpy(&x, genome_, sizeof(double));
+  return sin(x);
+  
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+std::ostream& operator<<(std::ostream &os, Individual const &indiv) {
+  double val = 0;
+  memcpy(&val, &indiv.genome_, sizeof(double) );
+  os << "Genome(" << indiv.length_ << " #;# "
+  <<", 0x"<< std::hex ;
+  for (size_t ii = 0; ii < indiv.length_; ++ii) {
+    os << " " << std::setfill ('0') << std::setw (2)<<   static_cast<int>(indiv.genome_[ii]);
+  }
+  os << " )" << std::dec;
+     
+  return os;  
+}
 
