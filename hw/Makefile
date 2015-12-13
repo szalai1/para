@@ -1,22 +1,21 @@
 CC=g++
 FLAGS=-std=c++11 -Wall -Wdeprecated -pedantic -O2 -g
 TEST=gtest.out
-OBJECTS=bin/Genome.o bin/TestGenome.o bin/TestPopulation.o
-TESTOS=bin/TestGenome.o bin/TestPopulation.o
-HEADERS=src/Genome.h src/Population.hpp
+OBJECTS=bin/Individual.o bin/TestPopulation.o bin/Population.o
+TESTOS=bin/TestIndividual.o bin/TestPopulation.o
+HEADERS=src/Individual.h src/Population.hpp
 BINARY=
 
 $(TEST): $(OBJECTS) $(HEADERS)
 	$(CC) test/gtest_main.cc -o bin/$@ -lgtest $(OBJECTS)
 
-bin/Genome.o: src/Genome.cpp $(HEADERS)
+bin/Individual.o: src/Individual.cpp $(HEADERS)
 	$(CC) $(FLAGS) $< -c -o $@
 
-
-bin/TestGenome.o: test/TestGenome.cpp $(HEADERS)
+bin/Population.o: src/Population.cpp src/Population.h
 	$(CC) $(FLAGS) $< -c -o $@
 
-bin/TestPopulation.o: test/TestPopulation.cpp src/Genome.h src/Genome.cpp $(HEADERS)
+bin/TestPopulation.o: test/TestPopulation.cpp src/Individual.h src/Individual.cpp $(HEADERS)
 	$(CC) $(FLAGS) $< -c -o $@
 
 clean:

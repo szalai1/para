@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <functional>
-#include "../src/Population.hpp"
+#include "../src/Population.h"
 #include "../src/Genome.h"
 
 double eval(const char *genome_, size_t length_) {
