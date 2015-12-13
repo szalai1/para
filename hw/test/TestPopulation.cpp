@@ -38,6 +38,7 @@ double eval(const char *genome_, size_t length_) {
   return -score;
 }
 
+
 TEST(Population, Poptest) {
   Population pop{1000, 20, 0.1, 100, eval};
   std:: cout << pop.round(5000, 0) << " round" << std::endl;
