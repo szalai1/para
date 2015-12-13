@@ -3,18 +3,15 @@
 #include <functional>
 #include "../src/Population.hpp"
 #include "../src/Genome.h"
-#include "../src/Queen.h"
 
-
-double eval(const char * genome_) {
-  size_t length_ = 8;
+double eval(const char *genome_, size_t length_) {
   int score = 0;
   std::vector<bool> check(length_, false);
   std::vector<bool> diag(2*length_, false);
   std::vector<bool> diag2(2*length_, false);
   for (size_t ii = 0; ii < length_; ++ii) {
     size_t num = static_cast<size_t>(genome_[ii]);
-    if (num > length_) {
+    if (num > length_ or num < 0) {
       score += 100;
     }
     else {
@@ -42,9 +39,8 @@ double eval(const char * genome_) {
 }
 
 TEST(Population, Poptest) {
-
-  Population pop{100,8, 0.1, 20, eval};
-  pop.round(1000);
+  Population pop{1000, 20, 0.1, 100, eval};
+  std:: cout << pop.round(5000, 0) << " round" << std::endl;
   std::cout << "best "  << pop.get_best_score() << std::endl;
   std::cout << pop.get_best().evaluate(eval) << std::endl;;
   std::cout << "best "  << pop.get_best() << std::endl;

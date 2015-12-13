@@ -6,14 +6,13 @@
 #include <algorithm>
 #include "../src/Genome.h"
 
-
 class Population {
 public:
   Population(size_t n,
              size_t gen,
              double mutation,
              size_t multiply,
-             std::function<double(const char*)> f)
+             std::function<double(const char*, size_t)> f)
     :mut_rate_{mutation},
     multi_rate_{multiply},
     pop_{n},
@@ -24,8 +23,8 @@ public:
     if (n < multiply && multi_rate_ < 2) {
       throw std::logic_error("Population::const error");
     }
-    population_.resize(n);
     for ( size_t ii = 0; ii < pop_; ++ii) {
+      population_.push_back(std::make_pair(0,Individual{gen}));
       population_[ii].first = population_[ii].second.evaluate(eval_);
     }
     std::make_heap(population_.begin(),
@@ -35,14 +34,24 @@ public:
                      return a.first > b.first;                     
                    });
   }
-  void round() {
-    std::cout << get_best_score() << std::endl;
+  double round() {
     kill();
     offspring();
     round_counter_+=1;
+    return get_best_score();
   }
-  void round(size_t k) {
+  double round(size_t k) {
     for ( size_t ii = 0; ii < k; ++ii) { round(); }
+    return get_best_score();
+  }
+
+  size_t round(size_t k, double max) {
+    for ( size_t ii = 0; ii < k; ++ii) {
+      if (round() >= max) {
+        return ii;
+      }  
+    }
+    return k-1;
   }
   double get_best_score() {
     return best_.first;
@@ -110,7 +119,7 @@ private:
   size_t pop_;
   size_t round_counter_;
   size_t gen_;
-  std::function<double(const char *)> eval_;
+  std::function<double(const char *,size_t)> eval_;
 };
 
 

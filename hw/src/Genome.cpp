@@ -4,8 +4,8 @@
 std::pair<Individual, Individual> crossover(Individual const &,
                                                       Individual const &);
 
-Individual::Individual() {
-  length_ = sizeof(double);
+Individual::Individual(size_t n) {
+  length_ = n;
   genome_ = new char[length_];
   for (size_t ii = 0; ii < length_; ++ii) {
     genome_[ii] = rand()%255;
@@ -41,8 +41,10 @@ Individual &Individual::operator=(Individual &&ind) {
 }
 
 
-Individual::Individual(const char *cc):Individual() {
+Individual::Individual(const char *cc) {
+  
   memcpy(&length_, cc, sizeof(size_t));
+  genome_ = new char[length_];
   memcpy(&genome_, cc + sizeof(size_t),length_);
 }
 
@@ -67,7 +69,7 @@ void Individual::mutation() {
 
 std::pair<Individual, Individual> crossover(Individual const &A,
                                             Individual const &B) {
-  auto ret_val = std::make_pair(Individual{}, Individual{});
+  auto ret_val = std::make_pair(Individual{A.length_}, Individual{A.length_});
   size_t where = rand() % A.length_;
   memcpy(ret_val.first.genome_, &A.genome_ , where);
   memcpy(ret_val.first.genome_ + where,
@@ -80,15 +82,15 @@ std::pair<Individual, Individual> crossover(Individual const &A,
   return ret_val;
 }
 
-double Individual::evaluate(std::function<double(const char*)> f) const {
-  return f(genome_);  
+double Individual::evaluate(std::function<double(const char*,size_t)> f) const {
+  return f(genome_, length_);  
 }
 
 std::ostream& operator<<(std::ostream &os, Individual const &indiv) {
   double val = 0;
   memcpy(&val, &indiv.genome_, sizeof(double) );
-  os << "Genome(" << indiv.length_ << " #;# "
-  <<", 0x"<< std::hex ;
+    os << "Genome(" << indiv.length_ << " #;# ";
+  //  <<", 0x"<< std::hex ;
   for (size_t ii = 0; ii < indiv.length_; ++ii) {
     os << " " << std::setfill ('0') << std::setw (2)<<   static_cast<int>(indiv.genome_[ii]);
   }
