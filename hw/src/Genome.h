@@ -5,6 +5,7 @@
 #include <map>
 #include <cmath>
 #include <iostream>
+#include <functional>
 
 class Individual {
  public:
@@ -19,7 +20,7 @@ class Individual {
   }
   char *serialize() const;
   void mutation();
-  double evaluate() const;
+  double evaluate(std::function<double(const char *)>) const;
   friend std::ostream& operator<<(std::ostream &os, Individual const &indiv);
   ~Individual() { delete[] genome_;}
  private:

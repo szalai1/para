@@ -80,11 +80,8 @@ std::pair<Individual, Individual> crossover(Individual const &A,
   return ret_val;
 }
 
-double Individual::evaluate() const {
-  double x = 0;
-  memcpy(&x, genome_, sizeof(double));
-  return sin(x);
-  
+double Individual::evaluate(std::function<double(const char*)> f) const {
+  return f(genome_);  
 }
 
 std::ostream& operator<<(std::ostream &os, Individual const &indiv) {
