@@ -1,8 +1,11 @@
 #include "Genome.h"
 
+<<<<<<< HEAD:hw/Genome.cpp
 using Genome;
+=======
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
 
-Genome(Genome&& g) {
+Genome::Genome(Genome&& g) {
   length_ = g.length_;
   g.length_ = 0;
   genome_ = g.genome_;
@@ -10,6 +13,7 @@ Genome(Genome&& g) {
   mutation_rate_ = g.mutation_rate_;
 }
 
+<<<<<<< HEAD:hw/Genome.cpp
 Genome(size_t len, float mutation_rate)  :length_{len},
   mutation_rate_{mutation_rate}
 {
@@ -28,28 +32,46 @@ Genome(Genome &&other)
 
 Genome get_begin(size_t k) const {
   if (k >= length ) {
-    return Genome{0, mutation_rate_};
+=======
+Genome::Genome(size_t len,
+               float mutation_rate,
+               std::function<char(size_t)> f)  :length_(len),
+                                          mutation_rate_(mutation_rate)
+{
+  genome_ = new char[length_];
+  for ( size_t ii = 0; ii < length_; ++ii) {
+    genome_[ii] = f(ii);
   }
-  
+}
+
+Genome Genome::get_begin(size_t k) const {
+  if (k >= length_ ) {
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
+    return Genome{0, mutation_rate_};
+  } 
   Genome begin_genome{k, mutation_rate_};
-  for ( int ii = 0; ii < k; ++ii ) {
+  for ( size_t ii = 0; ii < k; ++ii ) {
     begin_genome.genome_[ii] = genome_[ii];
   }
   return begin_genome;
 }
 
-Genome get_end(size_t k) const {
-  if (k >= length ) {
+Genome Genome::get_end(size_t k) const {
+  if (k >= length_ ) {
     return Genome{0, mutation_rate_};
   }
   Genome begin_genome{length_ - k, mutation_rate_};
-  for ( int ii = k; ii < length; ++ii ) {
+  for ( size_t ii = k; ii < length_; ++ii ) {
     begin_genome.genome_[ii-k] = genome_[ii];
   }
   return begin_genome;
 }
 
+<<<<<<< HEAD:hw/Genome.cpp
 
+=======
+Genome& Genome::append(const Genome &g) {
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
   size_t len = length_ + g.length_;
   char *tmp = new char[len];
   memcpy(tmp, genome_, length_);
@@ -60,12 +82,18 @@ Genome get_end(size_t k) const {
   return *this;
 }
 
+<<<<<<< HEAD:hw/Genome.cpp
 char *serialize() const {
+=======
+
+char *Genome::serialize() const {
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
   char *ser = new char[sizeof(float) + sizeof(size_t) + length_];
   memcpy(ser, &length_, sizeof(size_t));
   memcpy(ser + sizeof(size_t), &mutation_rate_, sizeof(float));
   memcpy(ser + sizeof(size_t) + sizeof(float), &genome_, length_);
   return ser;
+<<<<<<< HEAD:hw/Genome.cpp
 }
 
 void deserialize(const char* ser) {
@@ -73,17 +101,19 @@ void deserialize(const char* ser) {
   memcpy(ser + sizeof(size_t), mutation_rate_, sizeof(float));
   genome_ = new char[length_];
   memcpy(ser + sizeof(size_t) + sizeof(float), genome_, length_);
+=======
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
 }
 
-void mutation() {
-  for ( int ii = 0; ii < length_ -1; ++ii ) {
-    if (std::dynamic_cast<double>(rand())/RAND_MAX < mutation_rate_) {
+void Genome::mutation() {
+  for ( size_t ii = 0; ii < length_ -1; ++ii ) {
+    if (static_cast<double>(rand())/RAND_MAX < mutation_rate_) {
       std::swap<char>(genome_[ii], genome_[ii + 1]);
     }
   }
 }
 
-void dot_mutation(size_t where) {
+void Genome::dot_mutation(size_t where) {
   if ( where < length_ ) {
     genome_[where] = rand()%255;
   }
@@ -98,6 +128,7 @@ Genome & operator=(Genome &rhs){
   return *this;
 }
 
+<<<<<<< HEAD:hw/Genome.cpp
 Genome & operator=(Genome &&rhs) {
   delete[] genome_;
   genome_ = rhs.genome_;
@@ -105,4 +136,28 @@ Genome & operator=(Genome &&rhs) {
   length_ = rhs.length_;
   mutation_rate_ = rhs.mutation_rate_;
 }
+=======
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+>>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.cpp
 
