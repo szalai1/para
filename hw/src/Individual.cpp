@@ -40,18 +40,17 @@ Individual &Individual::operator=(Individual &&ind) {
   return *this;
 }
 
-
 Individual::Individual(const char *cc) {
   
   memcpy(&length_, cc, sizeof(size_t));
   genome_ = new char[length_];
-  memcpy(&genome_, cc + sizeof(size_t),length_);
+  memcpy(genome_, cc + sizeof(size_t),length_);
 }
 
 char *Individual::serialize() const {
   char *ser = new char[sizeof(size_t) + length_];
   memcpy(ser, &length_, sizeof(size_t));
-  memcpy(ser + sizeof(size_t), &genome_, length_);
+  memcpy(ser + sizeof(size_t), genome_, length_);
   return ser;
 }
 

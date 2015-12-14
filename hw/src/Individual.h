@@ -23,13 +23,13 @@ class Individual {
   void mutation();
   double evaluate(std::function<double(const char *, size_t)>) const;
   friend std::ostream& operator<<(std::ostream &os, Individual const &indiv);
+  size_t get_size() { return sizeof(size_t) + length_;}
   ~Individual() { delete[] genome_;}
  private:
   size_t length_;
   char *genome_;
   friend std::pair<Individual, Individual> crossover(Individual const &,
                                                       Individual const &);
-  
 };
 
 #endif
