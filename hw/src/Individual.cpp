@@ -1,4 +1,4 @@
-#include "Genome.h"
+#include "Individual.h"
 #include <iomanip>
 
 std::pair<Individual, Individual> crossover(Individual const &,
