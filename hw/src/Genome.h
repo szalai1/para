@@ -1,12 +1,24 @@
+<<<<<<< HEAD
 <<<<<<< HEAD:hw/Genome.h
 
 =======
 #include <functional>
 #include <cstring>
 >>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.h
+=======
+#ifndef GENOME_H
+#define GENOME_H
 
-class Genome {
+#include <cstring>
+#include <map>
+#include <cmath>
+#include <iostream>
+#include <functional>
+>>>>>>> 55f7f87ba25cb959725232be2c45f9baec682df1
+
+class Individual {
  public:
+<<<<<<< HEAD
   Genome() = delete;
 <<<<<<< HEAD:hw/Genome.h
   Genome(size_t lg, float m);
@@ -23,6 +35,14 @@ class Genome {
 >>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.h
   Genome get_begin(size_t) const;
   Genome get_end(size_t) const;
+=======
+  Individual(const char *);
+  Individual();
+  Individual(Individual const &ind);
+  Individual(Individual &&ind);
+  Individual &operator=(Individual const &ind);
+  Individual &operator=(Individual &&ind);
+>>>>>>> 55f7f87ba25cb959725232be2c45f9baec682df1
   int size() const {
     return length_;
   }
@@ -30,6 +50,7 @@ class Genome {
     return mutation_rate_;
   }
   char *serialize() const;
+<<<<<<< HEAD
 <<<<<<< HEAD:hw/Genome.h
   Genome append(Genome&);
   void deserialize(const char *);
@@ -49,8 +70,18 @@ class Genome {
   Genome& operator=(Genome &&);
   void dot_mutation(size_t);
 >>>>>>> e057b0ae8e82bb7d94652b697e733dfad926c7d3:hw/src/Genome.h
+=======
+  void mutation();
+  double evaluate(std::function<double(const char *)>) const;
+  friend std::ostream& operator<<(std::ostream &os, Individual const &indiv);
+  ~Individual() { delete[] genome_;}
+>>>>>>> 55f7f87ba25cb959725232be2c45f9baec682df1
  private:
   size_t length_;
   char *genome_;
-  float mutation_rate_;
+  friend std::pair<Individual, Individual> crossover(Individual const &,
+                                                      Individual const &);
+  
 };
+
+#endif
