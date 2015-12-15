@@ -7,6 +7,8 @@
 #include <mpi.h>
 #include <functional>
 #include "../src/Individual.h"
+#include <time.h>
+#include <stdlib.h>
 
 
 class Population {

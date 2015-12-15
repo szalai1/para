@@ -20,6 +20,7 @@ void Population::init(int *argc, char ***argv, std::function<char(size_t)> f) {
   MPI_Init(argc, argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
   MPI_Comm_size(MPI_COMM_WORLD, &numtasks_);
+  srand(time(NULL)+rank_);
   if (*argc == 2) {
     checkpoint_num_ = atoi((*argv)[1]);
   }
@@ -59,7 +60,7 @@ size_t Population::round(size_t k, double max) {
       if (check_done(false)) {
         return ii;
       }
-      migrate();
+      if (numtasks_ > 1) {migrate(); }
     }
     if (round() >= max) {
       check_done(true);
@@ -120,6 +121,7 @@ void Population::offspring() {
 }
 
 bool Population::check_done(bool done) {
+  return false;
   bool or_done = false;
   bool other_done = false;
   for (int ii = 1; ii < numtasks_; ++ii) {
@@ -153,12 +155,14 @@ void Population::send_individual(int id, Individual const &indiv, double score) 
   MPI_Send (&score, 1, MPI_DOUBLE, id, 0, MPI_COMM_WORLD); 
 }
 
-void Population::recv_individual(int from, Individual &indiv, double& score) {
+void Population::recv_individual(int from, Individual &indiv, double &score) {
   size_t siz = get_best().get_size();
   char *buff = new char[siz];
+  std::cout << rank_ <<  " send I"  << std::endl;
   MPI_Recv(buff, siz, MPI_CHAR, from, 0, MPI_COMM_WORLD, &status_);
   indiv = Individual{buff};
   delete[] buff;
+  std::cout << rank_ <<  " send II"  << std::endl;
   MPI_Recv(&score, 1, MPI_DOUBLE, from, 0, MPI_COMM_WORLD, &status_);
 }
 
@@ -168,13 +172,14 @@ void Population::migrate() {
   kill_under_threshold(threshold);
   balance(lists, threshold);
   delete[] lists;
+  offspring();
 }
 
 double *Population::broadcast() {
   double *lists = new double[numtasks_*multi_rate_];
   lowest_scores(lists + multi_rate_*rank_);
   for ( int ii = 0; ii < numtasks_; ++ii) {
-    MPI_Bcast (lists + ii*multi_rate_, multi_rate_, MPI_DOUBLE, ii,MPI_COMM_WORLD);
+    MPI_Bcast(lists + ii*multi_rate_, multi_rate_, MPI_DOUBLE, ii,MPI_COMM_WORLD);
   }
   return lists;
 }
@@ -204,51 +209,87 @@ void Population::kill_under_threshold(double threshold) {
 void Population::lowest_scores(double *list) {
   for ( size_t ii = 0; ii < multi_rate_; ++ii) {
     std::pop_heap(population_.begin(), population_.end()-ii, comp);
-    list[ii] = population_.end()[-ii].first;
+    list[ii] = population_.end()[-ii-1].first;
   }
   for ( size_t ii = 0; ii < multi_rate_; ++ii) {
-    std::push_heap(population_.begin(), population_.end() - multi_rate_ + ii, comp);
+    std::push_heap(population_.begin(), population_.end() - multi_rate_ + ii + 1, comp);
   }
 }
 
 void Population::balance(double *lists, double threshold) {
+
+
+  std::cout << "TH  " << threshold << std::endl;
+
+
+  
   size_t *multi_rate_parts = new size_t[numtasks_];
   for ( int ii = 0; ii < numtasks_; ++ii) {
     multi_rate_parts[ii] = multi_rate_;
-    multi_rate_parts[ii] /= numtasks_;
-    multi_rate_parts[ii] = multi_rate_parts[ii] - (multi_rate_parts[ii]*(numtasks_-1) /numtasks_);
+    if ( ii < numtasks_ - 1 ) {
+      multi_rate_parts[ii] /= numtasks_;
+    }
+    else {
+      multi_rate_parts[ii] = multi_rate_parts[ii] - (multi_rate_parts[ii]*(numtasks_-1) /numtasks_);
+    }
+    std:: cout << " " << multi_rate_parts[ii];
   }
+  std::cout << std::endl;
+
   size_t to = 0;
   size_t from = 0;
-  while ( to != numtasks_*multi_rate_ and
-          from != numtasks_*multi_rate_) {
+  for ( int ii = 0; ii < numtasks_; ++ii) {
+    for ( int jj = 0; jj < multi_rate_; ++jj) {
+      std::cout << " " << lists[ii*multi_rate_ + jj];
+    }
+    std::cout << "  ";
+  }
+  std::cout << std::endl;
+  while ( from != numtasks_*multi_rate_) {
     size_t id_to = to/multi_rate_;
     size_t id_from = from/multi_rate_;
-    if ( to%multi_rate_ > multi_rate_parts[id_to] ) {
+    if ( to%multi_rate_ < multi_rate_parts[id_to] ) {
       ++to;
       continue;
     }
-    if ( from%multi_rate_ > multi_rate_parts[id_from] ) {
+    if ( from%multi_rate_ >= multi_rate_parts[id_from] ) {
       ++from;
       continue;
     }
-    if (lists[from] < threshold) {
+    if (lists[from] <= threshold) {
       ++from ;
       continue;
     }
-    if (lists[to] >= threshold) {
+    if (lists[to] > threshold) {
       ++to;
       continue;
     }
-    if ( to < threshold) {
+    else {
       migrate_one(id_from, id_to);
       ++from;
       ++to;
     }
   }
+  std::make_heap(population_.begin(), population_.end(), comp);
   delete[] multi_rate_parts;
 }
 
 void Population::migrate_one(int from, int to) {
-  
+
+  if ( from == rank_) {
+    std::cout << "MIGRATE ONE send" << from << " to " << to << std::endl;
+    size_t rand_indiv = rand()%population_.size();
+    send_individual(to, population_[rand_indiv].second, population_[rand_indiv].first);
+    population_.erase(population_.begin() + rand_indiv);
+  }
+  if ( to == rank_ ) {
+    std::cout << "MIGRATE ONE recv" << from << " to " << to << std::endl;
+    double score;
+    Individual tmp;
+    recv_individual(from, tmp, score);
+    population_.push_back(std::make_pair(score, tmp));
+    if (score > best_.first) {
+      best_ = *(population_.end()-1);
+    }
+  }
 }
