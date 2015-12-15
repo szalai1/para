@@ -8,7 +8,7 @@
 #include <functional>
 #include "../src/Individual.h"
 #include <time.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 
 class Population {
@@ -38,8 +38,8 @@ private:
   int checkpoint_num_;
   std::function<double(const char *,size_t)> eval_;
   MPI_Status status_;
-  void send_individual(int id, Individual const &indiv, double score) const;
-  void recv_individual(int from, Individual &indiv, double& score);
+  void send_individual(int id, Individual const &indiv, double score, int tag) const;
+  void recv_individual(int from, Individual &indiv, double& score, int tag);
   void migrate();
   double compute_threshold(double *lists) const;
   double* broadcast();
@@ -49,3 +49,4 @@ private:
   void migrate_one(int from, int to);
 };
 #endif
+

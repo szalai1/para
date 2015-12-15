@@ -21,11 +21,11 @@ void Population::init(int *argc, char ***argv, std::function<char(size_t)> f) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
   MPI_Comm_size(MPI_COMM_WORLD, &numtasks_);
   srand(time(NULL)+rank_);
-  if (*argc == 2) {
+  if (*argc == 3) {
     checkpoint_num_ = atoi((*argv)[1]);
   }
-  else {
-  }
+  int x = atoi((*argv)[2]);
+  srand(x+rank_);
   if (rank_ < numtasks_-1) {
     pop_ /= numtasks_;
   }
@@ -35,9 +35,17 @@ void Population::init(int *argc, char ***argv, std::function<char(size_t)> f) {
   if (pop_ < multi_rate_ && multi_rate_ < 2) {
     throw std::logic_error("Population::const error");
   }
+  auto best = std::make_pair(9, Individual{});
   for ( size_t ii = 0; ii < pop_; ++ii) {
     population_.push_back(std::make_pair(0, Individual{gen_, f}));
     population_[ii].first = population_[ii].second.evaluate(eval_);
+    if (ii == 0 ) {
+      best = population_[ii];
+    }
+    else if (population_[ii].first > best.first) {
+       best = population_[ii];
+    }
+    best_ = best;
   }
   std::make_heap(population_.begin(), population_.end(), comp);
 }
@@ -60,13 +68,16 @@ size_t Population::round(size_t k, double max) {
       if (check_done(false)) {
         return ii;
       }
-      if (numtasks_ > 1) {migrate(); }
+      if (numtasks_ > 1) {
+        migrate();
+      }
     }
     if (round() >= max) {
       check_done(true);
       return ii;
     }  
   }
+  check_done(false);
   return k-1;
 }
 
@@ -121,26 +132,21 @@ void Population::offspring() {
 }
 
 bool Population::check_done(bool done) {
-  return false;
   bool or_done = false;
-  bool other_done = false;
   for (int ii = 1; ii < numtasks_; ++ii) {
+    bool other_done = false;
     if (rank_ == ii) {
-      MPI_Send (&done, 1, MPI_C_BOOL, 0, 0, MPI_COMM_WORLD);
+      MPI_Send (&done, 1, MPI_C_BOOL, 0, 1, MPI_COMM_WORLD);
       if (done) {
-        send_individual(0, get_best(), get_best_score());
+        send_individual(0, get_best(), get_best_score(),2);
       }
     }
     if (rank_ == 0) {
-      MPI_Recv(&other_done, 1, MPI_C_BOOL, ii, 0, MPI_COMM_WORLD, &status_);
+      MPI_Recv(&other_done, 1, MPI_C_BOOL, ii, 1, MPI_COMM_WORLD, &status_);
       if (other_done) {
-        or_done = true;
-        recv_individual(ii, best_.second, best_.first);
+        recv_individual(ii, best_.second, best_.first, 2);
       }
-      if ( done) {
-        or_done = true;
-      }
-      if ( other_done ) { or_done = true;}
+      or_done = or_done or other_done or done;
     }
   }
   MPI_Bcast (&or_done,1,MPI_C_BOOL,0,MPI_COMM_WORLD);
@@ -148,22 +154,20 @@ bool Population::check_done(bool done) {
 }
 
 
-void Population::send_individual(int id, Individual const &indiv, double score) const {
+void Population::send_individual(int id, Individual const &indiv, double score, int tag) const {
   char *ser = indiv.serialize();
-  MPI_Send (ser, indiv.get_size(), MPI_CHAR, id, 0, MPI_COMM_WORLD);
+  MPI_Send (ser, indiv.get_size(), MPI_CHAR, id, tag, MPI_COMM_WORLD);
   delete[] ser;
-  MPI_Send (&score, 1, MPI_DOUBLE, id, 0, MPI_COMM_WORLD); 
+  MPI_Send (&score, 1, MPI_DOUBLE, id, tag, MPI_COMM_WORLD);
 }
 
-void Population::recv_individual(int from, Individual &indiv, double &score) {
+void Population::recv_individual(int from, Individual &indiv, double &score, int tag) {
   size_t siz = get_best().get_size();
   char *buff = new char[siz];
-  std::cout << rank_ <<  " send I"  << std::endl;
-  MPI_Recv(buff, siz, MPI_CHAR, from, 0, MPI_COMM_WORLD, &status_);
+  MPI_Recv(buff, siz, MPI_CHAR, from, tag, MPI_COMM_WORLD, &status_);
   indiv = Individual{buff};
   delete[] buff;
-  std::cout << rank_ <<  " send II"  << std::endl;
-  MPI_Recv(&score, 1, MPI_DOUBLE, from, 0, MPI_COMM_WORLD, &status_);
+  MPI_Recv(&score, 1, MPI_DOUBLE, from, tag, MPI_COMM_WORLD, &status_);
 }
 
 void Population::migrate() {
@@ -217,12 +221,6 @@ void Population::lowest_scores(double *list) {
 }
 
 void Population::balance(double *lists, double threshold) {
-
-
-  std::cout << "TH  " << threshold << std::endl;
-
-
-  
   size_t *multi_rate_parts = new size_t[numtasks_];
   for ( int ii = 0; ii < numtasks_; ++ii) {
     multi_rate_parts[ii] = multi_rate_;
@@ -232,18 +230,9 @@ void Population::balance(double *lists, double threshold) {
     else {
       multi_rate_parts[ii] = multi_rate_parts[ii] - (multi_rate_parts[ii]*(numtasks_-1) /numtasks_);
     }
-    std:: cout << " " << multi_rate_parts[ii];
   }
-  std::cout << std::endl;
-
   size_t to = 0;
   size_t from = 0;
-  for ( int ii = 0; ii < numtasks_; ++ii) {
-    for ( int jj = 0; jj < multi_rate_; ++jj) {
-      std::cout << " " << lists[ii*multi_rate_ + jj];
-    }
-    std::cout << "  ";
-  }
   std::cout << std::endl;
   while ( from != numtasks_*multi_rate_) {
     size_t id_to = to/multi_rate_;
@@ -275,21 +264,20 @@ void Population::balance(double *lists, double threshold) {
 }
 
 void Population::migrate_one(int from, int to) {
-
   if ( from == rank_) {
-    std::cout << "MIGRATE ONE send" << from << " to " << to << std::endl;
     size_t rand_indiv = rand()%population_.size();
-    send_individual(to, population_[rand_indiv].second, population_[rand_indiv].first);
+    send_individual(to, population_[rand_indiv].second, population_[rand_indiv].first, 3);
     population_.erase(population_.begin() + rand_indiv);
   }
   if ( to == rank_ ) {
-    std::cout << "MIGRATE ONE recv" << from << " to " << to << std::endl;
     double score;
     Individual tmp;
-    recv_individual(from, tmp, score);
+    recv_individual(from, tmp, score, 3);
     population_.push_back(std::make_pair(score, tmp));
     if (score > best_.first) {
       best_ = *(population_.end()-1);
     }
   }
 }
+
+
