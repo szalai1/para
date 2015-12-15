@@ -12,6 +12,14 @@ Individual::Individual(size_t n) {
   }
 }
 
+Individual::Individual(size_t n, std::function<char(size_t)> f) {
+  length_ = n;
+  genome_ = new char[length_];
+  for (size_t ii = 0; ii < length_; ++ii) {
+    genome_[ii] = f(ii);
+  }
+}
+
 Individual::Individual(Individual const &ind) {                    
   length_ = ind.length_;
   genome_ = new char[length_];

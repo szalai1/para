@@ -9,6 +9,7 @@
 
 class Individual {
  public:
+  Individual(size_t n, std::function<char(size_t)> f);
   Individual(const char *);
   Individual():length_{0}, genome_{nullptr} {}
   Individual(size_t);
@@ -16,14 +17,11 @@ class Individual {
   Individual(Individual &&ind);
   Individual &operator=(Individual const &ind);
   Individual &operator=(Individual &&ind);
-  int size() const {
-    return length_;
-  }
   char *serialize() const;
   void mutation();
   double evaluate(std::function<double(const char *, size_t)>) const;
   friend std::ostream& operator<<(std::ostream &os, Individual const &indiv);
-  size_t get_size() { return sizeof(size_t) + length_;}
+  size_t get_size() const { return sizeof(size_t) + length_;}
   ~Individual() { delete[] genome_;}
  private:
   size_t length_;
