@@ -13,8 +13,8 @@
 
 class Population {
 public:
-  Population(int*, char***,std::function<double(const char*, size_t)>);
-  void init(std::function<char(size_t)> f = [](size_t){return rand()%255;});
+  Population(size_t , size_t , double ,  size_t , std::function<double(const char*, size_t)> );
+  void init(int *, char ***,std::function<char(size_t)> f = [](size_t){return rand()%255;});
   double round();
   double round(size_t k);
   size_t round(size_t k, double max);
@@ -22,7 +22,6 @@ public:
   Individual& get_best();
   ~Population() {MPI_Finalize();}
   int get_rank() {return rank_;}
-  size_t until(double max);
 private:
   bool check_done(bool);
   void kill();

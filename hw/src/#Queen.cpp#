@@ -1,0 +1,96 @@
+#include "Queen.h"
+
+std::pair<Queen, Queen> crossover(Queen const &,
+                                  Queen const &);
+
+Queen::Queen() {
+  length_ = 8;
+  genome_ = new char[length_];
+  for (size_t ii = 0; ii < length_; ++ii) {
+    genome_[ii] = rand()%255;
+  }
+}
+
+Queen::Queen(Queen const &ind) {                    
+  length_ = ind.length_;
+  genome_ = new char[length_];
+  memcpy(genome_, ind.genome_, length_);
+}
+
+Queen::Queen(Queen &&ind) {                    
+  length_ = ind.length_;
+  genome_ = ind.genome_;
+  ind.genome_ = nullptr;
+}
+
+Queen &Queen::operator=(Queen const &ind) {
+  Queen id{ind};
+  length_ = id.length_;
+  genome_ = id.genome_;
+  id.genome_ = nullptr;
+  return *this;
+}
+
+Queen &Queen::operator=(Queen &&ind) {
+  delete genome_;
+  genome_ = ind.genome_;
+  length_ = ind.length_;
+  ind.genome_ = nullptr;
+  return *this;
+}
+
+
+Queen::Queen(const char *cc):Queen() {
+  memcpy(&length_, cc, sizeof(size_t));
+  memcpy(&genome_, cc + sizeof(size_t),length_);
+}
+
+char *Queen::serialize() const {
+  char *ser = new char[sizeof(size_t) + length_];
+  memcpy(ser, &length_, sizeof(size_t));
+  memcpy(ser + sizeof(size_t), &genome_, length_);
+  return ser;
+}
+
+void Queen::mutation() {
+  size_t n =  rand()%length_;
+  size_t where = rand() % 8;
+  bool bit = (genome_[n] >> where)%2;
+  if ( bit ) {
+    genome_[n] &= ~(1u << where);
+  }
+  else {
+    genome_[n] |= (1u << where);
+  }
+}
+
+std::pair<Queen, Queen> crossover(Queen const &A,
+                                            Queen const &B) {
+  auto ret_val = std::make_pair(Queen{}, Queen{});
+  size_t where = rand() % A.length_;
+  memcpy(ret_val.first.genome_, &A.genome_ , where);
+  memcpy(ret_val.first.genome_ + where,
+         B.genome_ + where ,
+         A.length_ - where);
+  memcpy(ret_val.second.genome_, B.genome_ , where);
+  memcpy(ret_val.second.genome_ + where,
+         A.genome_ + where ,
+         A.length_ - where);
+  return ret_val;
+}
+
+
+
+std::ostream& operator<<(std::ostream &os, Queen const &indiv) {
+  double val = 0;
+  memcpy(&val, &indiv.genome_, sizeof(double) );
+  os << "Genome(" << indiv.length_ << " #;# ";
+  //  <<", 0x"<< std::hex ;
+  for (size_t ii = 0; ii < indiv.length_; ++ii) {
+    os << " " << std::setfill ('0') << std::setw (2)<<   static_cast<int>(indiv.genome_[ii]);
+  }
+  os << " )" << std::dec;
+     
+  return os;  
+}
+

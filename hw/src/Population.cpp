@@ -4,28 +4,25 @@ bool comp(std::pair<double, Individual> a, std::pair<double, Individual> b) {
   return a.first > b.first;                     
 }
 
-Population::Population(size_t n,
-           size_t gen,
-           double mutation,
-           size_t multiply,
-           std::function<double(const char*, size_t)> f)
-  :mut_rate_{mutation},
-   multi_rate_{multiply},
-   pop_{n},
-   round_counter_{0},
-   gen_{gen},
-   eval_{f} {}
-
-void Population::init(int *argc, char ***argv, std::function<char(size_t)> f) {
+Population::Population(int *argc, char ***argv, std::function<double(const char*, size_t)> f) : eval_{f} {
   MPI_Init(argc, argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
   MPI_Comm_size(MPI_COMM_WORLD, &numtasks_);
-  srand(time(NULL)+rank_);
-  if (*argc == 3) {
-    checkpoint_num_ = atoi((*argv)[1]);
+  if ( *argc != 6) {
+    std::cerr << "ERROR 6 parameter !!" << std::endl;
+    return;
   }
-  int x = atoi((*argv)[2]);
-  srand(x+rank_);
+  gen_ = atoi((*argv)[1]);
+  pop_ = atoi((*argv)[2]);
+  multi_rate_ = atoi((*argv)[3]);
+  mut_rate_ = atof((*argv)[4]);
+  checkpoint_num_ = atoi((*argv)[5]);
+  //  std::cout << gen_  << " " << pop_ << " " << multi_rate_
+  //          << " " << mut_rate_ << " " << checkpoint_num_ << std::endl;
+  srand(time(nullptr));
+}
+
+void Population::init( std::function<char(size_t)> f) {
   if (rank_ < numtasks_-1) {
     pop_ /= numtasks_;
   }
@@ -79,6 +76,24 @@ size_t Population::round(size_t k, double max) {
   }
   check_done(false);
   return k-1;
+}
+
+size_t Population::until(double max) {
+  int ii = 0;
+  while (round() < max) {
+    ++ii;
+    if ( ii % checkpoint_num_ == 0) {
+      if (check_done(false)) {
+        return ii;
+      }
+      if (numtasks_ > 1) {
+        migrate();
+      }
+      ii = 0;
+    }   
+  }
+  check_done(true);
+  return round_counter_;
 }
 
 double Population::get_best_score() {
@@ -233,7 +248,6 @@ void Population::balance(double *lists, double threshold) {
   }
   size_t to = 0;
   size_t from = 0;
-  std::cout << std::endl;
   while ( from != numtasks_*multi_rate_) {
     size_t id_to = to/multi_rate_;
     size_t id_from = from/multi_rate_;

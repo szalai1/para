@@ -1,4 +1,4 @@
-#include "Individual.h"
+#include "Genome.h"
 #include <iomanip>
 
 std::pair<Individual, Individual> crossover(Individual const &,
@@ -9,14 +9,6 @@ Individual::Individual(size_t n) {
   genome_ = new char[length_];
   for (size_t ii = 0; ii < length_; ++ii) {
     genome_[ii] = rand()%255;
-  }
-}
-
-Individual::Individual(size_t n, std::function<char(size_t)> f) {
-  length_ = n;
-  genome_ = new char[length_];
-  for (size_t ii = 0; ii < length_; ++ii) {
-    genome_[ii] = f(ii);
   }
 }
 
@@ -48,17 +40,18 @@ Individual &Individual::operator=(Individual &&ind) {
   return *this;
 }
 
+
 Individual::Individual(const char *cc) {
   
   memcpy(&length_, cc, sizeof(size_t));
   genome_ = new char[length_];
-  memcpy(genome_, cc + sizeof(size_t),length_);
+  memcpy(&genome_, cc + sizeof(size_t),length_);
 }
 
 char *Individual::serialize() const {
   char *ser = new char[sizeof(size_t) + length_];
   memcpy(ser, &length_, sizeof(size_t));
-  memcpy(ser + sizeof(size_t), genome_, length_);
+  memcpy(ser + sizeof(size_t), &genome_, length_);
   return ser;
 }
 
@@ -96,11 +89,13 @@ double Individual::evaluate(std::function<double(const char*,size_t)> f) const {
 std::ostream& operator<<(std::ostream &os, Individual const &indiv) {
   double val = 0;
   memcpy(&val, &indiv.genome_, sizeof(double) );
-    os << "Individual( len: " << indiv.length_ << " ; genom: ";
+    os << "Genome(" << indiv.length_ << " #;# ";
+  //  <<", 0x"<< std::hex ;
   for (size_t ii = 0; ii < indiv.length_; ++ii) {
-    os << " " << std::setfill ('0') << std::setw (3)<<   static_cast<int>(indiv.genome_[ii]);
+    os << " " << std::setfill ('0') << std::setw (2)<<   static_cast<int>(indiv.genome_[ii]);
   }
   os << " )" << std::dec;
      
   return os;  
 }
+
